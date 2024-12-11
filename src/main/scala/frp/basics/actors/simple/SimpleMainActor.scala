@@ -32,7 +32,7 @@ class SimpleMainActor(context: ActorContext[SimplePrimeCalculator.Reply])
 
   override def onSignal: PartialFunction[Signal, Behavior[Reply]] =
     case Terminated(ref) =>
-      println(s"SimpleMainActor: ${ref.path} terminated")
+      println(s"SimpleMainActor: ${ref.path.name} terminated")
       context.system.terminate()
       Behaviors.stopped
 
