@@ -1,0 +1,24 @@
+﻿#Compiled class files
+*.class
+
+#Log files
+*.log
+
+# Scala REPL history
+*.history
+
+# Dependency caches
+lib_managed/
+src_managed/
+
+# IDEA project files
+.idea/
+
+#SBT project-specific files
+target/
+project/target/
+project/project/
+
+# BSP configuration
+.bsp/
+project/build.properties

@@ -1,0 +1,27 @@
+<configuration>
+
+    <appender name="STDOUT_DEFAULT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%-5level %logger{1} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="STDOUT_NO_STACKTRACE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%-5level %logger{1} - %msg - %ex{0}</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="akka.actor.SupervisorStrategy" level="error" additivity="false">
+        <appender-ref ref="STDOUT_NO_STACKTRACE" />
+    </logger>
+    
+    <logger name="akka.actor.typed.Behavior" level="error" additivity="false">
+        <appender-ref ref="STDOUT_NO_STACKTRACE" />
+    </logger>
+
+    <root level="error">
+        <appender-ref ref="STDOUT_DEFAULT"/>
+    </root>
+
+</configuration>
