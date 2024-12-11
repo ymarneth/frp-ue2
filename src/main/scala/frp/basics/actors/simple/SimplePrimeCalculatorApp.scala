@@ -9,4 +9,8 @@ def simplePrimeCalculatorMain(): Unit =
 
   println("==================== SimplePrimeCalculatorApp ==========================")
 
+  val system = ActorSystem(SimpleMainActor(), "simple-prime-calculator-system")
+
+  Await.result(system.whenTerminated, Duration.Inf)
+
 end simplePrimeCalculatorMain
