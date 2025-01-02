@@ -3,7 +3,7 @@ package frp.exercises.exercise2_2
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
 object PrimeChecker:
@@ -20,19 +20,19 @@ object PrimeChecker:
 
   final case class FactorizationFailure(number: Int, reason: String) extends Reply
 
-  private def factor(n: Int)(implicit ec: scala.concurrent.ExecutionContext): Future[Seq[Int]] = Future {
+  private def factor(n: Int)(implicit ec: ExecutionContext): Future[Seq[Int]] = Future {
     (2 to n / 2).filter(n % _ == 0)
   }
 
   def apply(): Behavior[Command] =
-    Behaviors.setup { context =>
+    Behaviors.receive { (context, command) =>
       implicit val ec: ExecutionContextExecutor = context.executionContext
 
-      Behaviors.receiveMessage {
+      command match
         case CheckIfPrime(number, replyTo) =>
           context.pipeToSelf(factor(number)) {
             case Success(factors) =>
-              SendReply(PrimeResult(number, factors.toList, isPrime = factors.isEmpty), replyTo)
+              SendReply(PrimeResult(number, factors.toList, factors.isEmpty), replyTo)
             case Failure(exception) =>
               SendReply(FactorizationFailure(number, exception.getMessage), replyTo)
           }
@@ -41,6 +41,5 @@ object PrimeChecker:
         case SendReply(reply, replyTo) =>
           replyTo ! reply
           Behaviors.same
-      }
     }
 end PrimeChecker
