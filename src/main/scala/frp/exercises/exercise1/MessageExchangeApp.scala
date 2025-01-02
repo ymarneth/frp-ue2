@@ -8,14 +8,8 @@ import scala.concurrent.duration.Duration
 def messageExchangeMain(): Unit = {
   println("==================== MessageSenderApp ==========================")
 
-  val system = ActorSystem(MessageSender(), "message-exchange-system")
-
-  val sender = system
+  val system = ActorSystem(MainActor(), "main-actor")
   
-  sender ! Messages.SendMessage(1, "Hello, Receiver!")
-  sender ! Messages.SendMessage(2, "How are you?")
-  sender ! Messages.SendMessage(3, "Goodbye!")
-
   Thread.sleep(3000)
   system.terminate()
   Await.ready(system.whenTerminated, Duration.Inf)
