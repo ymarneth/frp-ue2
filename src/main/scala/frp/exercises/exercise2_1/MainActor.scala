@@ -1,4 +1,4 @@
-package frp.exercises.exercise1
+package frp.exercises.exercise2_1
 
 import akka.actor.typed.{Behavior, Terminated}
 import akka.actor.typed.scaladsl.Behaviors

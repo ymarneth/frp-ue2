@@ -1,9 +1,9 @@
-package frp.exercises.exercise1
+package frp.exercises.exercise2_1
 
 import scala.concurrent.duration.DurationInt
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior}
-import frp.exercises.exercise1.MessageSender.WrappedMessageReceived
+import frp.exercises.exercise2_1.MessageSender.WrappedMessageReceived
 
 import java.time.LocalDateTime
 

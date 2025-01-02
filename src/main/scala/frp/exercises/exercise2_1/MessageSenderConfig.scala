@@ -1,4 +1,4 @@
-package frp.exercises.exercise1
+package frp.exercises.exercise2_1
 
 import scala.concurrent.duration.FiniteDuration
 
