@@ -57,15 +57,17 @@ class DataStorage(context: ActorContext[DataStorage.Command],
   private var buffer: Queue[(Measurement, ActorRef[Reply])] = Queue.empty
   private var isPersisting = false
 
-  timers.startTimerAtFixedRate(FlushBuffer, timeWindow)
-
   override def onMessage(msg: Command): Behavior[Command] = {
     msg match {
       case InsertMeasurement(measurement, replyTo) =>
+        context.log.debug(s"Received measurement for insertion: $measurement")
+        println(s"Received measurement for insertion: $measurement")
         handleInsertMeasurement(measurement, replyTo)
         this
 
       case FlushBuffer =>
+        context.log.info("Flush buffer triggered.")
+        println("Flush buffer triggered.")
         handleFlushBuffer()
         this
 
@@ -76,11 +78,21 @@ class DataStorage(context: ActorContext[DataStorage.Command],
   }
 
   private def handleInsertMeasurement(measurement: Measurement, replyTo: ActorRef[Reply]): Unit = {
+    if (buffer.isEmpty) {
+      // Start the timer when the first message is added
+      timers.startTimerAtFixedRate(FlushBuffer, timeWindow)
+      context.log.info("FlushBuffer timer started.")
+      println("FlushBuffer timer started.")
+    }
+
     if (buffer.size >= maxBufferSize) {
-      context.log.error("Buffer overflow! Dropping measurement with ID: {}", measurement.id)
+      context.log.error(s"Buffer overflow! Dropping measurement with ID: ${measurement.id}.")
+      println(s"Buffer overflow! Dropping measurement with ID: ${measurement.id}.")
       replyTo ! FailureAcknowledged(measurement.id, "Buffer overflow")
     } else {
       buffer = buffer.enqueue((measurement, replyTo))
+      context.log.info(s"Measurement ${measurement.id} added to buffer. Current buffer size: ${buffer.size}")
+      println(s"Measurement ${measurement.id} added to buffer. Current buffer size: ${buffer.size}")
       if (buffer.size >= bulkSize && !isPersisting) {
         persistMeasurements()
       }
@@ -88,7 +100,10 @@ class DataStorage(context: ActorContext[DataStorage.Command],
   }
 
   private def handleFlushBuffer(): Unit = {
-    if (buffer.nonEmpty && !isPersisting) {
+    if (buffer.isEmpty && !isPersisting) {
+      context.log.info("FlushBuffer invoked, but no data to process.")
+      println("FlushBuffer invoked, but no data to process.")
+    } else if (!isPersisting) {
       persistMeasurements()
     }
   }
@@ -96,6 +111,15 @@ class DataStorage(context: ActorContext[DataStorage.Command],
   private def handleInsertedMeasurements(ids: Seq[Int]): Unit = {
     buffer = buffer.filterNot { case (measurement, _) => ids.contains(measurement.id) }
     isPersisting = false
+
+    context.log.info(s"Measurements ${ids.mkString(", ")} persisted. Remaining buffer size: ${buffer.size}")
+    println(s"Measurements ${ids.mkString(", ")} persisted. Remaining buffer size: ${buffer.size}")
+
+    if (buffer.isEmpty && !isPersisting) {
+      timers.cancel(FlushBuffer)
+      context.log.info("All measurements have been processed. FlushBuffer timer stopped.")
+      println("All measurements have been processed. FlushBuffer timer stopped.")
+    }
   }
 
   private def persistMeasurements(): Unit = {
@@ -103,22 +127,24 @@ class DataStorage(context: ActorContext[DataStorage.Command],
 
     val (measurementsToPersist, remainingBuffer) = buffer.splitAt(bulkSize)
     val createTableAction = measurements.schema.createIfNotExists
-    val insertAction = DBIO.seq(measurementsToPersist.map(_._1).map(m => measurements += m) *)
+    val insertAction = DBIO.seq(measurementsToPersist.map(_._1).map(m => measurements += m)*)
     val action = createTableAction.andThen(insertAction)
 
     val future = db.run(action)
-    val self = context.self
-    val log = context.log
+
+    context.log.info(s"Persisting ${measurementsToPersist.size} measurements.")
+    println(s"Persisting ${measurementsToPersist.size} measurements.")
 
     future.onComplete {
       case Success(_) =>
         val ids = measurementsToPersist.map(_._1.id)
-        self ! InsertedMeasurements(ids)
+        context.self ! InsertedMeasurements(ids)
         measurementsToPersist.foreach { case (measurement, replyTo) =>
           replyTo ! Acknowledged(measurement.id)
         }
       case Failure(exception) =>
-        log.error("Failed to persist measurements: {}", exception.getMessage)
+        context.log.error("Failed to persist measurements: {}", exception.getMessage)
+        println(s"Failed to persist measurements: ${exception.getMessage}")
         measurementsToPersist.foreach { case (measurement, replyTo) =>
           replyTo ! FailureAcknowledged(measurement.id, exception.getMessage)
         }
