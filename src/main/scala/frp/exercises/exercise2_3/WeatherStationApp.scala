@@ -10,5 +10,7 @@ def WeatherStationApp(): Unit = {
 
   val system = ActorSystem(MainActor(), "WeatherStationSystem")
 
+  Await.result(system.whenTerminated, Duration.Inf)
+
   println("============================== System Terminated ===============================")
 }

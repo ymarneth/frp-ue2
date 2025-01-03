@@ -38,7 +38,7 @@ class WeatherStation(context: ActorContext[WeatherStation.Command],
 
   private def init(): Behavior[Command] = Behaviors.receiveMessage {
     case StartWeatherStation =>
-      println("WeatherStation started")
+      context.log.info("WeatherStation started. Generating measurements.")
       timers.startTimerAtFixedRate(GenerateMessage, 1.second / messagesPerSecond)
       active(1, 0)
   }
@@ -48,7 +48,8 @@ class WeatherStation(context: ActorContext[WeatherStation.Command],
       case GenerateMessage =>
         if (messageCount > nrMessages) {
           if (ackCount >= nrMessages) {
-            println("All messages sent and acknowledged")
+            context.log.info("All messages sent and acknowledged. Shutting down.")
+            println("All messages sent and acknowledged. WeatherStation stopping.")
             Behaviors.stopped
           } else {
             Behaviors.same
@@ -59,16 +60,17 @@ class WeatherStation(context: ActorContext[WeatherStation.Command],
             temperature = Random.between(-20.0, 40.0),
             timestamp = LocalDateTime.now()
           )
-
+          context.log.debug(s"Generated measurement: $measurement")
           processingActor ! DataStorage.InsertMeasurement(measurement, storageAdapter)
           active(messageCount + 1, ackCount)
         }
 
       case WrappedAcknowledgement(DataStorage.Acknowledged(id)) =>
-        context.log.info(s"Measurement $id acknowledged")
-        println(s"Measurement $id acknowledged")
+        context.log.info(s"Measurement $id acknowledged.")
+        println(s"Measurement $id acknowledged.")
         if (ackCount + 1 >= nrMessages) {
-          println("All messages sent and acknowledged")
+          context.log.info("All messages acknowledged. WeatherStation stopping.")
+          println("All messages acknowledged. WeatherStation stopping.")
           Behaviors.stopped
         } else {
           active(messageCount, ackCount + 1)
