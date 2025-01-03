@@ -4,7 +4,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Random}
 
 object PrimeChecker:
 
@@ -21,6 +21,8 @@ object PrimeChecker:
   final case class FactorizationFailure(number: Int, reason: String) extends Reply
 
   private def factor(n: Int)(implicit ec: ExecutionContext): Future[Seq[Int]] = Future {
+    val delay = Random.nextInt(100)
+    Thread.sleep(delay)
     (2 to n / 2).filter(n % _ == 0)
   }
 

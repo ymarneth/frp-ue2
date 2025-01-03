@@ -11,7 +11,7 @@ object PrimeCheckerClient1 {
 
   case object StartProcessing extends Command
 
-  private case class ProcessNext() extends Command
+  private case object ProcessNext extends Command
 
   private final case class WrappedPrimeResult(reply: PrimeChecker.Reply) extends Command
 
@@ -31,10 +31,10 @@ object PrimeCheckerClient1 {
         case StartProcessing =>
           context.log.info("Starting to process the list of numbers.")
           println("Starting to process the list of numbers.")
-          timers.startSingleTimer(ProcessNext(), 10.millis)
+          timers.startSingleTimer(ProcessNext, 10.millis)
           Behaviors.same
 
-        case ProcessNext() =>
+        case ProcessNext =>
           numbers match {
             case Nil =>
               context.log.info("All numbers processed. Shutting down.")
@@ -45,7 +45,7 @@ object PrimeCheckerClient1 {
               context.log.info(s"Sending number $head to PrimeChecker")
               println(s"Sending number $head to PrimeChecker")
               primeChecker ! PrimeChecker.CheckIfPrime(head, adapter)
-              timers.startSingleTimer(ProcessNext(), 50.millis)
+              timers.startSingleTimer(ProcessNext, 50.millis)
               active(timers, primeChecker, tail)
           }
 
