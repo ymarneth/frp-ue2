@@ -10,9 +10,6 @@ import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-object Measurement:
-end Measurement
-
 case class Measurement(override val id: Int, temperature: DegreesCelsius, timestamp: LocalDateTime) extends Entity(id)
 
 case object Acknowledgement:
