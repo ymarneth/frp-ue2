@@ -11,16 +11,19 @@ object MessageSender {
   sealed trait Command
 
   private object SendMessages extends Command
+
   private final case class WrappedMessageReceived(reply: MessageReceiver.Reply) extends Command
 
   sealed trait Reply
 
   final case class MessageDelivered(id: Int, message: String, arrivalTime: LocalDateTime) extends Reply
+
   final case class MessageDeliveryFailed(id: Int, message: String, reason: String) extends Reply
 
-  def apply(replyTo: ActorRef[Reply], messageReceiver: ActorRef[MessageReceiver.Command], config: MessageSenderConfig): Behavior[Command] = Behaviors.setup { context =>
-    Behaviors.withTimers(timer => new MessageSender(context, replyTo, messageReceiver, timer, config))
-  }
+  def apply(replyTo: ActorRef[Reply], messageReceiver: ActorRef[MessageReceiver.Command], config: MessageSenderConfig): Behavior[Command] =
+    Behaviors.setup { context =>
+      Behaviors.withTimers(timer => new MessageSender(context, replyTo, messageReceiver, timer, config))
+    }
 }
 
 class MessageSender(context: ActorContext[MessageSender.Command],
@@ -45,7 +48,7 @@ class MessageSender(context: ActorContext[MessageSender.Command],
 
   private def sendUnsentMessages(): Unit = {
     val currentTime = System.currentTimeMillis()
-    for((id, (message, retries, lastSentTime)) <- unsentMessages) {
+    for ((id, (message, retries, lastSentTime)) <- unsentMessages) {
       if (currentTime - lastSentTime >= config.retryInterval.toMillis) {
         if (retries < config.maxRetries) {
           if (retries < 1) {
