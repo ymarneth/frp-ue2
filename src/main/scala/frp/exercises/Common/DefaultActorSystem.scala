@@ -1,4 +1,4 @@
-package frp.exercises
+package frp.exercises.Common
 
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors

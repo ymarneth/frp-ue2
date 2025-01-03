@@ -1,4 +1,4 @@
-package frp.exercises
+package frp.exercises.Common
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
